@@ -1,0 +1,251 @@
+CREATE TABLE products (
+	product_code VARCHAR(20)
+	,product_name VARCHAR(50)
+	,price INT
+	,quantity_remaining INT
+	,quantity_sold INT
+	);
+
+CREATE TABLE sales (
+	order_id VARCHAR(30)
+	,order_date DATE
+	,product_code VARCHAR(40)
+	,quantity_ordered INT
+	,sale_price INT
+	);
+
+INSERT INTO products
+VALUES (
+	103
+	,'samsung'
+	,23000
+	,30
+	,0
+	);
+
+INSERT INTO products
+VALUES (
+	105
+	,'realme'
+	,23000
+	,30
+	,0
+	);
+
+INSERT INTO products
+VALUES (
+	107
+	,'nokia'
+	,23000
+	,30
+	,0
+	);
+
+INSERT INTO products
+VALUES (
+	109
+	,'iqoo'
+	,23000
+	,30
+	,0
+	);
+
+INSERT INTO products
+VALUES (
+	111
+	,'xiomi'
+	,23000
+	,30
+	,0
+	);
+
+INSERT INTO products
+VALUES (
+	113
+	,'vivo'
+	,23000
+	,30
+	,0
+	);
+
+INSERT INTO products
+VALUES (
+	115
+	,'lg'
+	,23000
+	,30
+	,0
+	);
+
+INSERT INTO products
+VALUES (
+	117
+	,'nothing'
+	,23000
+	,30
+	,0
+	);
+
+INSERT INTO products
+VALUES (
+	119
+	,'iphone'
+	,23000
+	,30
+	,0
+	);
+
+INSERT INTO products
+VALUES (
+	121
+	,'redmi'
+	,23000
+	,30
+	,0
+	);
+
+INSERT INTO products
+VALUES (
+	123
+	,'sony'
+	,23000
+	,30
+	,0
+	);
+	
+	
+	
+    --Stored Procedure
+	
+CREATE
+	OR
+ALTER PROCEDURE buy_products (
+	@product_name VARCHAR(30)
+	,@prod_qty INT
+	)
+AS
+DECLARE @v_productCode VARCHAR(30)
+	,@v_price INT
+	,@v_qntyLeft INT;
+
+BEGIN
+	SELECT @v_productCode = product_code
+		,@v_price = price
+		,@v_qntyLeft = quantity_remaining
+	FROM products
+	WHERE product_name = @product_name;
+
+	IF @v_qntyLeft > 0
+	BEGIN
+		INSERT INTO sales (
+			order_date
+			,product_code
+			,quantity_ordered
+			,sale_price
+			)
+		VALUES (
+			cast(GETDATE() AS DATE)
+			,@v_productCode
+			,@prod_qty
+			,@v_price
+			);
+
+		UPDATE products
+		SET quantity_remaining = (quantity_remaining - @prod_qty)
+			,quantity_sold = (quantity_sold + @prod_qty)
+		WHERE product_code = @v_productCode;
+
+		SELECT *
+		FROM products;
+
+		SELECT *
+		FROM sales;
+	END;
+	ELSE
+	BEGIN
+		PRINT 'No products Left';
+	END;
+END;
+
+EXEC buy_products 'realme'
+	,5;
+	
+	
+	
+	
+	
+	--Cursor
+
+DECLARE @id INT
+	,@brand VARCHAR(60);
+
+DECLARE cursorPointer CURSOR
+FOR
+SELECT product_code
+	,product_name
+FROM products
+
+OPEN cursorPointer
+
+FETCH NEXT
+FROM cursorPointer
+INTO @id
+	,@brand
+
+WHILE (@@FETCH_STATUS = 0)
+BEGIN
+	PRINT 'ID is ' + cast(@id AS VARCHAR(30)) + '  Brand is ' + @brand;
+
+	FETCH NEXT
+	FROM cursorPointer
+	INTO @id
+		,@brand
+END
+
+CLOSE cursorPointer
+
+DEALLOCATE cursorPointer
+
+--Trigger
+
+CREATE TRIGGER trg_Products_QuantityCheck ON products AFTER
+
+UPDATE AS
+
+BEGIN
+	IF EXISTS (
+			SELECT 1
+			FROM inserted
+			WHERE quantity_remaining < 0
+			)
+	BEGIN
+		PRINT 'Warning: Quantity remaining is less than zero for some products.';
+	END
+END;
+
+UPDATE products
+SET quantity_remaining = - 5
+WHERE product_code = 103;
+
+
+--function
+
+CREATE FUNCTION total_revenue (@phone VARCHAR(30))
+RETURNS INT
+AS
+BEGIN
+	DECLARE @revenue INT
+		,@v_price INT
+		,@v_quantity_sold INT
+
+	SELECT @v_price = price
+		,@v_quantity_sold = quantity_sold
+	FROM products
+	WHERE product_name = @phone
+
+	SET @revenue = @v_price * @v_quantity_sold;
+
+	RETURN @revenue
+END
+
+
