@@ -228,3 +228,24 @@ SET quantity_remaining = - 5
 WHERE product_code = 103;
 
 
+--function
+
+CREATE FUNCTION total_revenue (@phone VARCHAR(30))
+RETURNS INT
+AS
+BEGIN
+	DECLARE @revenue INT
+		,@v_price INT
+		,@v_quantity_sold INT
+
+	SELECT @v_price = price
+		,@v_quantity_sold = quantity_sold
+	FROM products
+	WHERE product_name = @phone
+
+	SET @revenue = @v_price * @v_quantity_sold;
+
+	RETURN @revenue
+END
+
+
